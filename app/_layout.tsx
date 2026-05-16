@@ -14,6 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/state/AuthContext';
 import { OnboardingProvider } from '@/state/OnboardingContext';
 import { GoalsProvider } from '@/state/GoalsContext';
+import { AdvisoryProvider } from '@/state/AdvisoryContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,6 +40,7 @@ export default function RootLayout() {
       <AuthProvider>
         <OnboardingProvider>
           <GoalsProvider>
+          <AdvisoryProvider>
             <StatusBar style="light" />
             <Stack
               screenOptions={{
@@ -47,6 +49,7 @@ export default function RootLayout() {
                 animation: 'fade',
               }}
             />
+          </AdvisoryProvider>
           </GoalsProvider>
         </OnboardingProvider>
       </AuthProvider>
