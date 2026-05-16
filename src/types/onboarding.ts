@@ -1,6 +1,17 @@
 import type { SubmittedDoc } from './documents';
 
-export type OnboardingStep = 'personal' | 'financial' | 'documents' | 'done';
+export type OnboardingStep = 'personal' | 'family' | 'financial' | 'documents' | 'done';
+
+export interface ChildProfile {
+  name: string;
+  age: number;
+}
+
+export interface FamilySection {
+  spouseSalary?: number;
+  dependents?: number;
+  children: ChildProfile[];
+}
 
 export interface PersonalSection {
   fullName: string;
@@ -49,6 +60,7 @@ export interface DocumentsSection {
 export interface OnboardingProfile {
   step: OnboardingStep;
   personal?: PersonalSection;
+  family?: FamilySection;
   financial?: FinancialSection;
   documents?: DocumentsSection;
 }

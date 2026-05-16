@@ -164,7 +164,7 @@ export default function FinancialDetailsScreen() {
   return (
     <ScreenContainer scroll edges={['top', 'bottom']} contentClassName="gap-stack-lg pb-stack-lg">
       <OnboardingHeader
-        stepIndex={2}
+        stepIndex={3}
         title="Financial details"
         subtitle="Approximate is fine — Sanjay refines these together with you. Leave fields empty if they don't apply."
       />

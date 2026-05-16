@@ -4,19 +4,20 @@ import { Card } from '@/components/ui/Card';
 import { Text } from '@/components/ui/Text';
 import { Chip } from '@/components/ui/Chip';
 import { Icon } from '@/components/ui/Icon';
-import { MOCK_GOALS } from '@/data/mockGoals';
+import { useGoals } from '@/state/GoalsContext';
 
 export type GoalPilotEntryCardProps = {
   variant?: 'home' | 'advisory';
 };
 
 export function GoalPilotEntryCard({ variant = 'home' }: GoalPilotEntryCardProps) {
+  const { goals } = useGoals();
   const counts = {
-    onTrack: MOCK_GOALS.filter((g) => g.status === 'on-track').length,
-    lagging: MOCK_GOALS.filter((g) => g.status === 'lagging').length,
-    ahead: MOCK_GOALS.filter((g) => g.status === 'ahead').length,
+    onTrack: goals.filter((g) => g.status === 'on-track').length,
+    lagging: goals.filter((g) => g.status === 'lagging').length,
+    ahead: goals.filter((g) => g.status === 'ahead').length,
   };
-  const total = MOCK_GOALS.length;
+  const total = goals.length;
 
   const headline = variant === 'advisory' ? 'Prep your goals for Sanjay' : 'Goal Pilot';
   const sub =

@@ -13,7 +13,7 @@ export type OnboardingHeaderProps = {
 
 export function OnboardingHeader({
   stepIndex,
-  totalSteps = 4,
+  totalSteps = 5,
   title,
   subtitle,
   canGoBack = true,

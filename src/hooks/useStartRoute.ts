@@ -5,6 +5,7 @@ import type { OnboardingStep } from '@/types/onboarding';
 
 const STEP_TO_ROUTE: Record<OnboardingStep, Href> = {
   personal: '/(onboarding)/personal-details',
+  family: '/(onboarding)/family-details',
   financial: '/(onboarding)/financial-details',
   documents: '/(onboarding)/documents',
   done: '/(tabs)/home',

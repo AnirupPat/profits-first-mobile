@@ -11,6 +11,7 @@ import { readJSON, remove, writeJSON } from './persist';
 import { DEMO_MODE, DEMO_PROFILE } from '@/data/demoProfile';
 import type {
   DocumentsSection,
+  FamilySection,
   FinancialSection,
   OnboardingProfile,
   OnboardingStep,
@@ -19,7 +20,7 @@ import type {
 
 const STORAGE_KEY = 'profits-first:onboarding';
 
-const VALID_STEPS: OnboardingStep[] = ['personal', 'financial', 'documents', 'done'];
+const VALID_STEPS: OnboardingStep[] = ['personal', 'family', 'financial', 'documents', 'done'];
 
 const INITIAL: OnboardingProfile = DEMO_PROFILE;
 
@@ -29,6 +30,7 @@ function normalize(profile: OnboardingProfile | null): OnboardingProfile {
   return {
     step,
     personal: profile.personal ?? INITIAL.personal,
+    family: profile.family ?? INITIAL.family,
     financial: profile.financial ?? INITIAL.financial,
     documents: profile.documents ?? INITIAL.documents,
   };
@@ -42,6 +44,7 @@ type State = {
 type Action =
   | { type: 'HYDRATE'; profile: OnboardingProfile }
   | { type: 'SET_PERSONAL'; data: PersonalSection }
+  | { type: 'SET_FAMILY'; data: FamilySection }
   | { type: 'SET_FINANCIAL'; data: FinancialSection }
   | { type: 'SET_DOCUMENTS'; data: DocumentsSection }
   | { type: 'SET_STEP'; step: OnboardingStep }
@@ -53,6 +56,8 @@ function reducer(state: State, action: Action): State {
       return { hydrated: true, profile: action.profile };
     case 'SET_PERSONAL':
       return { ...state, profile: { ...state.profile, personal: action.data } };
+    case 'SET_FAMILY':
+      return { ...state, profile: { ...state.profile, family: action.data } };
     case 'SET_FINANCIAL':
       return { ...state, profile: { ...state.profile, financial: action.data } };
     case 'SET_DOCUMENTS':
@@ -70,6 +75,7 @@ const initialState: State = DEMO_MODE
 
 type OnboardingContextValue = State & {
   setPersonal: (data: PersonalSection) => void;
+  setFamily: (data: FamilySection) => void;
   setFinancial: (data: FinancialSection) => void;
   setDocuments: (data: DocumentsSection) => void;
   setStep: (step: OnboardingStep) => void;
@@ -99,6 +105,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     (data: PersonalSection) => dispatch({ type: 'SET_PERSONAL', data }),
     [],
   );
+  const setFamily = useCallback(
+    (data: FamilySection) => dispatch({ type: 'SET_FAMILY', data }),
+    [],
+  );
   const setFinancial = useCallback(
     (data: FinancialSection) => dispatch({ type: 'SET_FINANCIAL', data }),
     [],
@@ -117,12 +127,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     () => ({
       ...state,
       setPersonal,
+      setFamily,
       setFinancial,
       setDocuments,
       setStep,
       reset,
     }),
-    [state, setPersonal, setFinancial, setDocuments, setStep, reset],
+    [state, setPersonal, setFamily, setFinancial, setDocuments, setStep, reset],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

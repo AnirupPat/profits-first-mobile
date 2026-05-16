@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Chip, type ChipTone } from '@/components/ui/Chip';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { MOCK_GOALS } from '@/data/mockGoals';
+import { useGoals } from '@/state/GoalsContext';
 import type { Goal, GoalCategory, GoalStatus } from '@/types/goals';
 import { inrCompact } from '@/utils/format';
 
@@ -92,10 +92,11 @@ function GoalListCard({ goal }: { goal: Goal }) {
 }
 
 export default function GoalsListScreen() {
-  const totalTarget = MOCK_GOALS.reduce((s, g) => s + g.targetAmount, 0);
-  const totalCurrent = MOCK_GOALS.reduce((s, g) => s + g.currentAmount, 0);
+  const { goals } = useGoals();
+  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
+  const totalCurrent = goals.reduce((s, g) => s + g.currentAmount, 0);
   const overallProgress = totalTarget > 0 ? totalCurrent / totalTarget : 0;
-  const lagging = MOCK_GOALS.filter((g) => g.status === 'lagging').length;
+  const lagging = goals.filter((g) => g.status === 'lagging').length;
 
   return (
     <View className="flex-1 bg-background">
@@ -143,12 +144,25 @@ export default function GoalsListScreen() {
           <Text variant="headline-md" color="text-on-surface">
             Flight goals
           </Text>
-          <Text variant="label-caps" color="text-on-surface-variant">
-            {MOCK_GOALS.length} active
-          </Text>
+          <View className="flex-row items-center gap-stack-sm">
+            <Text variant="label-caps" color="text-on-surface-variant">
+              {goals.length} active
+            </Text>
+            <Pressable
+              onPress={() => router.push('/goals/new')}
+              className="flex-row items-center gap-1 py-1 px-2 rounded-lg bg-secondary-container/20 border border-secondary/30"
+              accessibilityRole="button"
+              accessibilityLabel="Add new goal"
+            >
+              <Icon name="add" size={14} color="#99d4ae" />
+              <Text variant="label-caps" color="text-secondary">
+                New goal
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
-        {MOCK_GOALS.map((g) => (
+        {goals.map((g) => (
           <GoalListCard key={g.id} goal={g} />
         ))}
       </ScreenContainer>

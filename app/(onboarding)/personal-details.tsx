@@ -55,8 +55,8 @@ export default function PersonalDetailsScreen() {
       pan: pan.toUpperCase(),
       aadharLast4,
     });
-    setStep('financial');
-    router.push('/(onboarding)/financial-details');
+    setStep('family');
+    router.push('/(onboarding)/family-details');
   };
 
   return (

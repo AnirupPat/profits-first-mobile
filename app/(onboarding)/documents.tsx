@@ -184,7 +184,7 @@ export default function DocumentsScreen() {
   return (
     <ScreenContainer scroll edges={['top', 'bottom']} contentClassName="gap-stack-lg pb-stack-lg">
       <OnboardingHeader
-        stepIndex={3}
+        stepIndex={4}
         title="Documents"
         subtitle="Upload these to complete KYC. Required documents are needed to continue. Files stay on this device — nothing is sent to a server."
       />

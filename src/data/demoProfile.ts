@@ -17,6 +17,14 @@ export const DEMO_PROFILE: OnboardingProfile = {
     pan: 'ABCDE1234F',
     aadharLast4: '5678',
   },
+  family: {
+    spouseSalary: 150000,
+    dependents: 4,
+    children: [
+      { name: 'Arjun', age: 8 },
+      { name: 'Meera', age: 5 },
+    ],
+  },
   financial: {
     assets: {
       cash: 500000,

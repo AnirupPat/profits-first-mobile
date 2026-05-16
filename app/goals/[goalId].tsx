@@ -8,7 +8,7 @@ import { Chip, type ChipTone } from '@/components/ui/Chip';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { DonutChart } from '@/components/charts/DonutChart';
-import { findGoal } from '@/data/mockGoals';
+import { useGoals } from '@/state/GoalsContext';
 import { MOCK_HOLDINGS } from '@/data/mockHoldings';
 import { FUND_DETAILS } from '@/data/mockFunds';
 import type { GoalCategory, GoalStatus } from '@/types/goals';
@@ -108,6 +108,7 @@ function FundRow({ fundId }: { fundId: string }) {
 
 export default function GoalDetailScreen() {
   const { goalId } = useLocalSearchParams<{ goalId: string }>();
+  const { findGoal } = useGoals();
   const goal = findGoal(goalId ?? '');
 
   if (!goal) {
