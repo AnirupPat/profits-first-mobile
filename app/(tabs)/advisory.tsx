@@ -111,7 +111,7 @@ export default function AdvisoryScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <TopAppBar title="Advisory" />
+      <TopAppBar title="Advisory" onRightPress={() => router.push('/help')} />
       <ScreenContainer scroll edges={[]} contentClassName="gap-stack-md">
 
         <View>

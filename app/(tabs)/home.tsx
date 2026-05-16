@@ -100,7 +100,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <TopAppBar title="Profits First" />
+      <TopAppBar title="Profits First" onRightPress={() => router.push('/help')} />
       <ScreenContainer scroll edges={[]} contentClassName="gap-stack-md">
         <View>
           <Text variant="headline-lg" color="text-on-surface">

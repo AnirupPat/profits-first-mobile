@@ -104,7 +104,7 @@ function HoldingCard({ id, name, subCategory, plan, currentValue, invested, retu
 export default function PortfolioScreen() {
   return (
     <View className="flex-1 bg-background">
-      <TopAppBar title="My Wealth" />
+      <TopAppBar title="My Wealth" onRightPress={() => router.push('/help')} />
       <ScreenContainer scroll edges={[]} contentClassName="gap-stack-md pb-stack-lg">
 
         {/* Total value hero */}

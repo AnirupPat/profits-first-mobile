@@ -15,6 +15,7 @@ import { AuthProvider } from '@/state/AuthContext';
 import { OnboardingProvider } from '@/state/OnboardingContext';
 import { GoalsProvider } from '@/state/GoalsContext';
 import { AdvisoryProvider } from '@/state/AdvisoryContext';
+import { HelpProvider } from '@/state/HelpContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -41,14 +42,16 @@ export default function RootLayout() {
         <OnboardingProvider>
           <GoalsProvider>
           <AdvisoryProvider>
-            <StatusBar style="light" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: '#131315' },
-                animation: 'fade',
-              }}
-            />
+            <HelpProvider>
+              <StatusBar style="light" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: '#131315' },
+                  animation: 'fade',
+                }}
+              />
+            </HelpProvider>
           </AdvisoryProvider>
           </GoalsProvider>
         </OnboardingProvider>

@@ -4,7 +4,7 @@ import { Text } from './Text';
 
 const cx = (...p: Array<string | undefined | false>) => p.filter(Boolean).join(' ');
 
-export type InputProps = Omit<TextInputProps, 'style'> & {
+export type InputProps = TextInputProps & {
   label?: string;
   helper?: string;
   error?: string;
@@ -18,6 +18,7 @@ export function Input({
   containerClassName,
   onFocus,
   onBlur,
+  style,
   ...rest
 }: InputProps) {
   const [focused, setFocused] = useState(false);
@@ -41,6 +42,7 @@ export function Input({
           'border',
           borderColor,
         )}
+        style={style}
         placeholderTextColor="#737686"
         onFocus={(e) => {
           setFocused(true);

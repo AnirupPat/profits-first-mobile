@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { router } from 'expo-router';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopAppBar } from '@/components/layout/TopAppBar';
 import { Text } from '@/components/ui/Text';
@@ -8,7 +9,7 @@ import { MOCK_COMMUNITY_POSTS } from '@/data/mockCommunityPosts';
 export default function CommunityScreen() {
   return (
     <View className="flex-1 bg-background">
-      <TopAppBar title="Community" />
+      <TopAppBar title="Community" onRightPress={() => router.push('/help')} />
       <ScreenContainer scroll edges={[]} contentClassName="gap-stack-md pb-stack-lg">
         <View>
           <Text variant="headline-lg" color="text-on-surface">
