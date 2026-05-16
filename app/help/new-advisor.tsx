@@ -109,16 +109,13 @@ export default function NewAdvisorTicketScreen() {
           </View>
 
           <Card variant="high">
-            <View className="flex-row items-center gap-3">
-              <SanjayAvatar size={32} rounded="circle" />
-              <Text variant="body-md" color="text-on-surface-variant" className="flex-1">
-                Typical response time is within{' '}
-                <Text variant="body-md" color="text-on-surface" className="font-manrope-semibold">
-                  {urgency === 'urgent' ? '4 business hours' : '1 business day'}
-                </Text>
-                .
+            <Text variant="body-md" color="text-on-surface-variant" className="text-center">
+              Typical response time is within{' '}
+              <Text variant="body-md" color="text-on-surface" className="font-manrope-semibold">
+                {urgency === 'urgent' ? '4 business hours' : '1 business day'}
               </Text>
-            </View>
+              .
+            </Text>
           </Card>
 
           <View className="w-full gap-stack-sm">

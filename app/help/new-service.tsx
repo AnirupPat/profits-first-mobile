@@ -55,16 +55,13 @@ export default function NewServiceTicketScreen() {
           </View>
 
           <Card variant="high">
-            <View className="flex-row items-center gap-3">
-              <Icon name="info" size={20} color="#bec6e0" />
-              <Text variant="body-md" color="text-on-surface-variant" className="flex-1">
-                Most service tickets are resolved within{' '}
-                <Text variant="body-md" color="text-on-surface" className="font-manrope-semibold">
-                  1–2 business days
-                </Text>
-                . We’ll email you when there’s an update.
+            <Text variant="body-md" color="text-on-surface-variant" className="text-center">
+              Most service tickets are resolved within{' '}
+              <Text variant="body-md" color="text-on-surface" className="font-manrope-semibold">
+                1–2 business days
               </Text>
-            </View>
+              . We’ll email you when there’s an update.
+            </Text>
           </Card>
 
           <View className="w-full gap-stack-sm">
