@@ -213,46 +213,61 @@ function FundLinkRow({
   holdingId,
   linked,
   sipStr,
+  blockedBy,
   onToggle,
   onSipChange,
 }: {
   holdingId: string;
   linked: boolean;
   sipStr: string;
+  /** Name of the goal that already claims this fund; undefined if free */
+  blockedBy?: string;
   onToggle: () => void;
   onSipChange: (val: string) => void;
 }) {
   const holding = MOCK_HOLDINGS.find((h) => h.id === holdingId);
   if (!holding) return null;
   const dotColor = CATEGORY_COLOR[holding.category] ?? '#bec6e0';
+  const isBlocked = !!blockedBy;
 
   return (
     <Pressable
-      onPress={onToggle}
-      style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
+      onPress={isBlocked ? undefined : onToggle}
+      disabled={isBlocked}
+      style={({ pressed }) => (!isBlocked && pressed ? { opacity: 0.7 } : undefined)}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked: linked }}
+      accessibilityState={{ checked: linked, disabled: isBlocked }}
     >
       <View
         className={`rounded-xl border p-4 gap-stack-sm ${
-          linked
-            ? 'bg-secondary-container/10 border-secondary/40'
-            : 'bg-surface-container-low border-outline-variant/20'
+          isBlocked
+            ? 'bg-surface-container/30 border-outline-variant/10'
+            : linked
+              ? 'bg-secondary-container/10 border-secondary/40'
+              : 'bg-surface-container-low border-outline-variant/20'
         }`}
+        style={isBlocked ? { opacity: 0.5 } : undefined}
       >
         {/* Fund header row */}
         <View className="flex-row items-start gap-3">
+          {/* Checkbox / lock indicator */}
           <View
             className={`w-5 h-5 rounded border-2 items-center justify-center mt-0.5 flex-shrink-0 ${
-              linked ? 'bg-secondary border-secondary' : 'border-outline-variant'
+              isBlocked
+                ? 'border-outline-variant/40 bg-surface-container'
+                : linked
+                  ? 'bg-secondary border-secondary'
+                  : 'border-outline-variant'
             }`}
           >
-            {linked ? <Icon name="check" size={12} color="#131315" /> : null}
+            {linked && !isBlocked ? <Icon name="check" size={12} color="#131315" /> : null}
+            {isBlocked ? <Icon name="lock" size={10} color="#5c5c69" /> : null}
           </View>
+
           <View className="flex-1">
             <Text
               variant="body-md"
-              color={linked ? 'text-on-surface' : 'text-on-surface-variant'}
+              color={isBlocked || !linked ? 'text-on-surface-variant' : 'text-on-surface'}
               className="font-manrope-semibold"
               numberOfLines={1}
             >
@@ -264,22 +279,26 @@ function FundLinkRow({
                 {holding.subCategory} · {holding.plan}
               </Text>
             </View>
+            {isBlocked && (
+              <Text variant="label-caps" color="text-on-surface-variant" className="mt-1">
+                Linked to: {blockedBy}
+              </Text>
+            )}
           </View>
+
           <Text variant="label-caps" color="text-on-surface-variant" className="mt-0.5">
             {inrCompact(holding.currentValue)}
           </Text>
         </View>
 
-        {/* SIP input — only visible when linked */}
-        {linked && (
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <CurrencyInput
-              label="Monthly SIP for this goal"
-              value={sipStr}
-              onChangeText={onSipChange}
-              helper="How much of your SIP in this fund goes towards this goal?"
-            />
-          </Pressable>
+        {/* SIP input — only visible when linked to this goal */}
+        {linked && !isBlocked && (
+          <CurrencyInput
+            label="Monthly SIP for this goal"
+            value={sipStr}
+            onChangeText={onSipChange}
+            helper="How much of your SIP in this fund goes towards this goal?"
+          />
         )}
       </View>
     </Pressable>
@@ -290,7 +309,7 @@ function FundLinkRow({
 
 export default function NewGoalScreen() {
   const { profile } = useOnboarding();
-  const { addGoal } = useGoals();
+  const { addGoal, fundsInUse } = useGoals();
 
   const profileChildren = profile.family?.children ?? [];
 
@@ -695,6 +714,7 @@ export default function NewGoalScreen() {
                   holdingId={h.id}
                   linked={h.id in linkedSips}
                   sipStr={linkedSips[h.id] ?? ''}
+                  blockedBy={fundsInUse[h.id]}
                   onToggle={() => toggleFund(h.id)}
                   onSipChange={(val) => setSip(h.id, val)}
                 />

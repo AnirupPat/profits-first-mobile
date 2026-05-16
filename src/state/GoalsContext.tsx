@@ -22,6 +22,8 @@ function reducer(state: State, action: Action): State {
 type GoalsContextValue = State & {
   addGoal: (goal: Goal) => void;
   findGoal: (id: string) => Goal | undefined;
+  /** fundId → name of the goal that has already claimed that fund */
+  fundsInUse: Record<string, string>;
 };
 
 const GoalsContext = createContext<GoalsContextValue | null>(null);
@@ -34,10 +36,19 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     (id: string) => state.goals.find((g) => g.id === id),
     [state.goals],
   );
+  const fundsInUse = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const goal of state.goals) {
+      for (const link of goal.linkedFunds) {
+        map[link.fundId] = goal.name;
+      }
+    }
+    return map;
+  }, [state.goals]);
 
   const value = useMemo<GoalsContextValue>(
-    () => ({ ...state, addGoal, findGoal }),
-    [state, addGoal, findGoal],
+    () => ({ ...state, addGoal, findGoal, fundsInUse }),
+    [state, addGoal, findGoal, fundsInUse],
   );
 
   return <GoalsContext.Provider value={value}>{children}</GoalsContext.Provider>;
