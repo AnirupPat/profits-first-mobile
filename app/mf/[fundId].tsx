@@ -5,7 +5,6 @@ import { TopAppBar } from '@/components/layout/TopAppBar';
 import { Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
-import { Button } from '@/components/ui/Button';
 import { MOCK_HOLDINGS } from '@/data/mockHoldings';
 import { FUND_DETAILS, type RiskLevel } from '@/data/mockFunds';
 import { inr, inrCompact } from '@/utils/format';
@@ -229,16 +228,6 @@ export default function FundDetailScreen() {
             </View>
           ))}
         </Card>
-
-        {/* Actions */}
-        <View className="flex-row gap-stack-md">
-          <View className="flex-1">
-            <Button label="Redeem" variant="outline" fullWidth />
-          </View>
-          <View className="flex-1">
-            <Button label="Invest More" variant="primary" fullWidth />
-          </View>
-        </View>
 
       </ScreenContainer>
     </View>
