@@ -13,7 +13,7 @@ import { useOnboarding } from '@/state/OnboardingContext';
 import { useGoals } from '@/state/GoalsContext';
 import type { Goal, GoalCategory, GoalRiskProfile } from '@/types/goals';
 import type { ChildProfile } from '@/types/onboarding';
-import { inr } from '@/utils/format';
+import { inr, inrCompact } from '@/utils/format';
 
 const CURRENT_YEAR = 2026;
 
@@ -21,7 +21,7 @@ const CATEGORIES: { id: GoalCategory; label: string; icon: IconName; desc: strin
   { id: 'retirement', label: 'Retirement', icon: 'sail-boat', desc: 'Build your freedom corpus' },
   { id: 'education', label: 'Education', icon: 'school', desc: "Fund a child's future" },
   { id: 'home', label: 'Home', icon: 'home-city', desc: 'Save for a down payment' },
-  { id: 'travel', label: 'Travel', icon: 'airplane', desc: 'Plan your next adventure' },
+  { id: 'travel', label: 'Travel', icon: 'airplane', desc: 'Next adventure' },
 ];
 
 const RISK_BY_CATEGORY: Record<GoalCategory, GoalRiskProfile> = {
@@ -44,20 +44,38 @@ const FUNDS_BY_CATEGORY: Record<GoalCategory, string[]> = {
   travel: ['sbi-liquid', 'hdfc-short-term'],
 };
 
-const CORPUS_SUGGESTION: Record<GoalCategory, number> = {
-  retirement: 50000000,
-  education: 5000000,
-  home: 2500000,
-  travel: 300000,
+// Annual inflation rates per category
+const INFLATION_BY_CATEGORY: Record<GoalCategory, number> = {
+  education: 0.08,  // education costs rise ~8% p.a. in India
+  home: 0.07,
+  retirement: 0.06,
+  travel: 0.06,
 };
 
-// Simplified PMT: monthly SIP needed to reach FV at ~12% annual returns
+const TODAY_COST_LABEL: Record<GoalCategory, string> = {
+  education: "Today's education cost",
+  home: "Today's property cost",
+  retirement: "Monthly expense today",
+  travel: "Today's trip cost",
+};
+
+const TODAY_COST_HELPER: Record<GoalCategory, string> = {
+  education: 'e.g. current annual fees or 4-yr course cost.',
+  home: 'e.g. current market price of the property you want.',
+  retirement: "We'll compute the corpus needed to sustain this monthly.",
+  travel: 'e.g. total estimated cost if you travelled today.',
+};
+
 function calcMonthlySip(targetAmount: number, years: number): number {
   if (years <= 0 || targetAmount <= 0) return 0;
   const n = years * 12;
   const r = 0.12 / 12;
   const pmt = (targetAmount * r) / (Math.pow(1 + r, n) - 1);
   return Math.round(pmt);
+}
+
+function inflationAdjust(todayCost: number, inflationRate: number, years: number): number {
+  return Math.round(todayCost * Math.pow(1 + inflationRate, years));
 }
 
 function categoryTargetYear(category: GoalCategory, child?: ChildProfile): number {
@@ -81,34 +99,42 @@ function CategoryCard({
   onSelect: () => void;
 }) {
   return (
+    // flex-1 via className; only opacity goes in the pressed-state style callback
     <Pressable
       onPress={onSelect}
-      style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1, flex: 1 })}
+      className="flex-1"
+      style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
       accessibilityRole="button"
       accessibilityLabel={item.label}
     >
       <View
-        className={`p-4 rounded-2xl border items-center gap-2 ${
+        className={`flex-1 p-4 rounded-2xl border items-center gap-2 overflow-hidden ${
           selected
             ? 'bg-secondary-container/30 border-secondary'
             : 'bg-surface-container-low border-outline-variant/30'
         }`}
       >
         <View
-          className={`w-12 h-12 rounded-xl items-center justify-center ${
+          className={`w-11 h-11 rounded-xl items-center justify-center ${
             selected ? 'bg-secondary-container/40' : 'bg-surface-container-high'
           }`}
         >
-          <Icon name={item.icon} size={24} color={selected ? '#99d4ae' : '#bec6e0'} />
+          <Icon name={item.icon} size={22} color={selected ? '#99d4ae' : '#bec6e0'} />
         </View>
         <Text
           variant="body-md"
           color={selected ? 'text-secondary' : 'text-on-surface'}
-          className="font-manrope-semibold text-center"
+          className="font-manrope-semibold text-center w-full"
+          numberOfLines={1}
         >
           {item.label}
         </Text>
-        <Text variant="label-caps" color="text-on-surface-variant" className="text-center">
+        <Text
+          variant="label-caps"
+          color="text-on-surface-variant"
+          className="text-center w-full"
+          numberOfLines={2}
+        >
           {item.desc}
         </Text>
       </View>
@@ -143,14 +169,10 @@ function ChildPicker({
                   : 'bg-surface-container-low border-outline-variant/40'
               }`}
             >
-              <Text
-                variant="body-md"
-                color={sel ? 'text-secondary' : 'text-on-surface-variant'}
-              >
-                {child.name}
+              <Text variant="body-md" color={sel ? 'text-secondary' : 'text-on-surface'}>
+                {child.name}{' '}
                 <Text variant="label-caps" color="text-on-surface-variant">
-                  {' '}
-                  (age {child.age})
+                  age {child.age}
                 </Text>
               </Text>
             </Pressable>
@@ -168,7 +190,7 @@ function ChildPicker({
             variant="body-md"
             color={selected === null ? 'text-secondary' : 'text-on-surface-variant'}
           >
-            Other / not listed
+            Other
           </Text>
         </Pressable>
       </View>
@@ -180,25 +202,24 @@ export default function NewGoalScreen() {
   const { profile } = useOnboarding();
   const { addGoal } = useGoals();
 
-  const children = profile.family?.children ?? [];
+  const profileChildren = profile.family?.children ?? [];
 
   const [step, setStep] = useState<Step>('pick-category');
   const [category, setCategory] = useState<GoalCategory | null>(null);
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [goalName, setGoalName] = useState('');
+  const [todaysCostStr, setTodaysCostStr] = useState('');
   const [targetAmountStr, setTargetAmountStr] = useState('');
   const [targetYearStr, setTargetYearStr] = useState('');
 
   const handleCategorySelect = (cat: GoalCategory) => {
     setCategory(cat);
-    // reset child when switching away from education
+    setTodaysCostStr('');
     if (cat !== 'education') setSelectedChild(null);
-    // pre-fill target year and amount based on category
-    const defaultChild = cat === 'education' && children.length > 0 ? children[0] : undefined;
+    const defaultChild = cat === 'education' && profileChildren.length > 0 ? profileChildren[0] : undefined;
     if (cat === 'education' && defaultChild) setSelectedChild(defaultChild);
     setTargetYearStr(String(categoryTargetYear(cat, defaultChild)));
-    setTargetAmountStr(String(CORPUS_SUGGESTION[cat]));
-    // pre-fill name
+    setTargetAmountStr('');
     const defaultNames: Record<GoalCategory, string> = {
       retirement: 'Retirement Corpus',
       education: defaultChild ? `${defaultChild.name}'s Education` : "Child's Education",
@@ -210,12 +231,36 @@ export default function NewGoalScreen() {
 
   const handleChildChange = (child: ChildProfile | null) => {
     setSelectedChild(child);
-    if (child) {
-      setTargetYearStr(String(categoryTargetYear('education', child)));
-      setGoalName(`${child.name}'s Education`);
-    } else {
-      setTargetYearStr(String(categoryTargetYear('education')));
-      setGoalName("Child's Education");
+    const yr = categoryTargetYear('education', child ?? undefined);
+    setTargetYearStr(String(yr));
+    setGoalName(child ? `${child.name}'s Education` : "Child's Education");
+    // recalculate inflation-adjusted amount if today's cost is set
+    if (todaysCostStr && Number(todaysCostStr) > 0) {
+      const years = Math.max(1, yr - CURRENT_YEAR);
+      const inflated = inflationAdjust(Number(todaysCostStr), INFLATION_BY_CATEGORY.education, years);
+      setTargetAmountStr(String(inflated));
+    }
+  };
+
+  const handleTodaysCostChange = (val: string) => {
+    setTodaysCostStr(val);
+    const cost = Number(val) || 0;
+    if (cost > 0 && category) {
+      const years = Math.max(1, (Number(targetYearStr) || CURRENT_YEAR + 1) - CURRENT_YEAR);
+      const inflated = inflationAdjust(cost, INFLATION_BY_CATEGORY[category], years);
+      setTargetAmountStr(String(inflated));
+    }
+  };
+
+  const handleTargetYearChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, '').slice(0, 4);
+    setTargetYearStr(cleaned);
+    // recalc if today's cost is entered
+    if (todaysCostStr && Number(todaysCostStr) > 0 && category) {
+      const yr = Number(cleaned) || CURRENT_YEAR + 1;
+      const years = Math.max(1, yr - CURRENT_YEAR);
+      const inflated = inflationAdjust(Number(todaysCostStr), INFLATION_BY_CATEGORY[category], years);
+      setTargetAmountStr(String(inflated));
     }
   };
 
@@ -226,13 +271,16 @@ export default function NewGoalScreen() {
   const riskProfile = category ? RISK_BY_CATEGORY[category] : 'balanced';
   const alloc = ALLOC_BY_RISK[riskProfile];
 
+  const todaysCost = Number(todaysCostStr) || 0;
+  const inflationRate = category ? INFLATION_BY_CATEGORY[category] : 0.06;
+  const inflationPct = Math.round(inflationRate * 100);
+
   const canProceed = category !== null;
-  const canSave =
-    goalName.trim().length > 0 && targetAmount > 0 && targetYear > CURRENT_YEAR;
+  const canSave = goalName.trim().length > 0 && targetAmount > 0 && targetYear > CURRENT_YEAR;
 
   const onSave = () => {
     if (!category || !canSave) return;
-    const newGoal: Goal = {
+    addGoal({
       id: `goal-${Date.now()}`,
       name: goalName.trim(),
       category,
@@ -248,8 +296,7 @@ export default function NewGoalScreen() {
       debtPct: alloc.debt,
       alternativesPct: alloc.alt,
       recommendedFundIds: FUNDS_BY_CATEGORY[category],
-    };
-    addGoal(newGoal);
+    });
     router.back();
   };
 
@@ -258,11 +305,8 @@ export default function NewGoalScreen() {
       <TopAppBar
         title={step === 'pick-category' ? 'New Goal' : 'Goal details'}
         onBackPress={() => {
-          if (step === 'fill-details') {
-            setStep('pick-category');
-          } else {
-            router.back();
-          }
+          if (step === 'fill-details') setStep('pick-category');
+          else router.back();
         }}
         rightIcon={null}
       />
@@ -278,25 +322,28 @@ export default function NewGoalScreen() {
               </Text>
             </View>
 
-            <View className="flex-row gap-stack-sm">
-              {CATEGORIES.slice(0, 2).map((cat) => (
-                <CategoryCard
-                  key={cat.id}
-                  item={cat}
-                  selected={category === cat.id}
-                  onSelect={() => handleCategorySelect(cat.id)}
-                />
-              ))}
-            </View>
-            <View className="flex-row gap-stack-sm">
-              {CATEGORIES.slice(2).map((cat) => (
-                <CategoryCard
-                  key={cat.id}
-                  item={cat}
-                  selected={category === cat.id}
-                  onSelect={() => handleCategorySelect(cat.id)}
-                />
-              ))}
+            {/* 2×2 grid — explicit flex-row with flex-1 children */}
+            <View className="gap-stack-sm">
+              <View className="flex-row gap-stack-sm">
+                {CATEGORIES.slice(0, 2).map((cat) => (
+                  <CategoryCard
+                    key={cat.id}
+                    item={cat}
+                    selected={category === cat.id}
+                    onSelect={() => handleCategorySelect(cat.id)}
+                  />
+                ))}
+              </View>
+              <View className="flex-row gap-stack-sm">
+                {CATEGORIES.slice(2).map((cat) => (
+                  <CategoryCard
+                    key={cat.id}
+                    item={cat}
+                    selected={category === cat.id}
+                    onSelect={() => handleCategorySelect(cat.id)}
+                  />
+                ))}
+              </View>
             </View>
 
             <Button
@@ -309,11 +356,11 @@ export default function NewGoalScreen() {
           </>
         ) : (
           <>
-            {/* Education child picker */}
-            {category === 'education' && children.length > 0 && (
+            {/* Education: child picker */}
+            {category === 'education' && profileChildren.length > 0 && (
               <Card>
                 <ChildPicker
-                  children={children}
+                  children={profileChildren}
                   selected={selectedChild}
                   onSelect={handleChildChange}
                 />
@@ -323,8 +370,8 @@ export default function NewGoalScreen() {
                       Smart fill applied
                     </Text>
                     <Text variant="body-md" color="text-on-surface-variant" className="mt-1">
-                      {selectedChild.name} is {selectedChild.age} years old — college in{' '}
-                      {horizonYears} years ({targetYear}). Target year and corpus pre-filled.
+                      {selectedChild.name} is {selectedChild.age} yr old — college in{' '}
+                      {horizonYears} yr ({targetYear}).
                     </Text>
                   </View>
                 )}
@@ -341,13 +388,39 @@ export default function NewGoalScreen() {
                   autoCapitalize="words"
                 />
 
+                {/* Today's cost → inflation-adjusted corpus */}
+                <CurrencyInput
+                  label={category ? TODAY_COST_LABEL[category] : "Today's cost"}
+                  value={todaysCostStr}
+                  onChangeText={handleTodaysCostChange}
+                  helper={category ? TODAY_COST_HELPER[category] : 'Optional — helps us compute inflation-adjusted target.'}
+                />
+
+                {/* Inflation callout */}
+                {todaysCost > 0 && targetAmount > 0 && (
+                  <View className="bg-surface-container/60 rounded-lg border border-outline-variant/20 p-3 flex-row items-start gap-2">
+                    <Icon name="info" size={16} color="#bec6e0" />
+                    <Text variant="label-caps" color="text-on-surface-variant" className="flex-1">
+                      {inrCompact(todaysCost)} today grows to{' '}
+                      <Text variant="label-caps" color="text-on-surface">
+                        {inrCompact(targetAmount)}
+                      </Text>{' '}
+                      in {horizonYears} yr at {inflationPct}% annual inflation.
+                    </Text>
+                  </View>
+                )}
+
                 <CurrencyInput
                   label="Target corpus"
                   value={targetAmountStr}
-                  onChangeText={setTargetAmountStr}
+                  onChangeText={(v) => {
+                    setTargetAmountStr(v);
+                    // manual edit clears the auto-link to today's cost
+                    if (!todaysCostStr) return;
+                  }}
                   helper={
-                    category === 'education'
-                      ? 'Estimated cost including inflation.'
+                    todaysCost > 0
+                      ? 'Auto-filled from today\'s cost + inflation. You can override.'
                       : 'How much do you want to accumulate?'
                   }
                 />
@@ -356,7 +429,7 @@ export default function NewGoalScreen() {
                   label="Target year"
                   placeholder={String(CURRENT_YEAR + horizonYears)}
                   value={targetYearStr}
-                  onChangeText={(v) => setTargetYearStr(v.replace(/\D/g, '').slice(0, 4))}
+                  onChangeText={handleTargetYearChange}
                   keyboardType="number-pad"
                   maxLength={4}
                   helper={`${horizonYears} year${horizonYears === 1 ? '' : 's'} from now`}
@@ -364,7 +437,7 @@ export default function NewGoalScreen() {
               </View>
             </Card>
 
-            {/* SIP estimate */}
+            {/* Monthly SIP estimate */}
             {monthlySipNeeded > 0 && (
               <Card variant="high">
                 <View className="flex-row items-center gap-stack-md">
@@ -379,7 +452,7 @@ export default function NewGoalScreen() {
                       {inr(monthlySipNeeded)}
                     </Text>
                     <Text variant="label-caps" color="text-on-surface-variant" className="mt-0.5">
-                      at ~12% annual returns · {riskProfile} strategy
+                      at ~12% returns · {riskProfile} · {horizonYears} yr horizon
                     </Text>
                   </View>
                 </View>
