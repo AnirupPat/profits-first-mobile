@@ -17,6 +17,11 @@ export const MOCK_GOALS: Goal[] = [
     debtPct: 25,
     alternativesPct: 5,
     recommendedFundIds: ['pp-flexi-cap', 'hdfc-top-100', 'nippon-gold-etf'],
+    linkedFunds: [
+      { fundId: 'pp-flexi-cap', monthlySip: 15000 },
+      { fundId: 'hdfc-top-100', monthlySip: 10000 },
+      { fundId: 'nippon-gold-etf', monthlySip: 5000 },
+    ],
   },
   {
     id: 'education',
@@ -34,6 +39,10 @@ export const MOCK_GOALS: Goal[] = [
     debtPct: 30,
     alternativesPct: 10,
     recommendedFundIds: ['pp-flexi-cap', 'icici-bluechip', 'hdfc-short-term'],
+    linkedFunds: [
+      { fundId: 'pp-flexi-cap', monthlySip: 8000 },
+      { fundId: 'hdfc-short-term', monthlySip: 7000 },
+    ],
   },
   {
     id: 'home',
@@ -51,6 +60,9 @@ export const MOCK_GOALS: Goal[] = [
     debtPct: 60,
     alternativesPct: 10,
     recommendedFundIds: ['hdfc-short-term', 'sbi-liquid', 'icici-bluechip'],
+    linkedFunds: [
+      { fundId: 'hdfc-short-term', monthlySip: 5000 },
+    ],
   },
   {
     id: 'travel',
@@ -68,6 +80,9 @@ export const MOCK_GOALS: Goal[] = [
     debtPct: 70,
     alternativesPct: 10,
     recommendedFundIds: ['sbi-liquid', 'hdfc-short-term'],
+    linkedFunds: [
+      { fundId: 'sbi-liquid', monthlySip: 5000 },
+    ],
   },
 ];
 

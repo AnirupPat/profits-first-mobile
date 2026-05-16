@@ -11,7 +11,7 @@ import { DonutChart } from '@/components/charts/DonutChart';
 import { useGoals } from '@/state/GoalsContext';
 import { MOCK_HOLDINGS } from '@/data/mockHoldings';
 import { FUND_DETAILS } from '@/data/mockFunds';
-import type { GoalCategory, GoalStatus } from '@/types/goals';
+import type { GoalCategory, GoalStatus, LinkedFund } from '@/types/goals';
 import { inr, inrCompact } from '@/utils/format';
 
 const CATEGORY_ICON: Record<GoalCategory, IconName> = {
@@ -106,6 +106,38 @@ function FundRow({ fundId }: { fundId: string }) {
   );
 }
 
+function LinkedFundRow({ link }: { link: LinkedFund }) {
+  const holding = MOCK_HOLDINGS.find((h) => h.id === link.fundId);
+  if (!holding) return null;
+  return (
+    <Pressable
+      onPress={() => router.push(`/mf/${link.fundId}`)}
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+      accessibilityRole="button"
+    >
+      <View className="flex-row items-center gap-3 py-3 border-b border-outline-variant/20">
+        <View className="flex-1">
+          <Text variant="body-md" color="text-on-surface" numberOfLines={1}>
+            {holding.name}
+          </Text>
+          <Text variant="label-caps" color="text-on-surface-variant">
+            {holding.subCategory} · {holding.plan}
+          </Text>
+        </View>
+        <View className="items-end">
+          <Text variant="body-md" color="text-secondary" className="font-manrope-semibold">
+            {inr(link.monthlySip)}/mo
+          </Text>
+          <Text variant="label-caps" color="text-on-surface-variant">
+            SIP
+          </Text>
+        </View>
+        <Icon name="chevron_right" size={16} color="#909097" />
+      </View>
+    </Pressable>
+  );
+}
+
 export default function GoalDetailScreen() {
   const { goalId } = useLocalSearchParams<{ goalId: string }>();
   const { findGoal } = useGoals();
@@ -168,37 +200,56 @@ export default function GoalDetailScreen() {
           </View>
         </Card>
 
-        {/* SIP gap card */}
+        {/* Linked SIPs card */}
         <Card>
-          <Text variant="label-caps" color="text-on-surface-variant" className="mb-stack-sm">
-            Monthly contribution
-          </Text>
-          <View className="flex-row gap-2">
-            <View className="flex-1 bg-surface-container-low rounded-lg p-3">
-              <Text variant="label-caps" color="text-on-surface-variant" className="mb-1">
-                You're saving
-              </Text>
+          <View className="flex-row items-center justify-between mb-stack-sm">
+            <Text variant="label-caps" color="text-on-surface-variant">
+              Your linked SIPs
+            </Text>
+            <View className="flex-row items-baseline gap-1">
               <Text variant="body-md" color="text-on-surface" className="font-manrope-semibold">
-                {inr(goal.monthlySipActual)}
+                {inrCompact(goal.monthlySipActual)}
               </Text>
-            </View>
-            <View className="flex-1 bg-surface-container-low rounded-lg p-3">
-              <Text variant="label-caps" color="text-on-surface-variant" className="mb-1">
-                Plan needs
-              </Text>
-              <Text variant="body-md" color="text-on-surface" className="font-manrope-semibold">
-                {inr(goal.monthlySipNeeded)}
+              <Text variant="label-caps" color="text-on-surface-variant">
+                of {inrCompact(goal.monthlySipNeeded)}/mo
               </Text>
             </View>
           </View>
+
+          <ProgressBar
+            value={
+              goal.monthlySipNeeded > 0
+                ? Math.min((goal.monthlySipActual / goal.monthlySipNeeded) * 100, 100)
+                : 0
+            }
+            max={100}
+            tone={STATUS_BAR_TONE[goal.status]}
+            height="md"
+          />
+
+          {goal.linkedFunds.length > 0 ? (
+            <View className="mt-stack-sm">
+              {goal.linkedFunds.map((link) => (
+                <LinkedFundRow key={link.fundId} link={link} />
+              ))}
+            </View>
+          ) : (
+            <View className="mt-stack-md flex-row items-start gap-2 bg-surface-container/60 rounded-lg border border-outline-variant/20 p-3">
+              <Icon name="info" size={16} color="#bec6e0" />
+              <Text variant="body-md" color="text-on-surface-variant" className="flex-1">
+                No funds linked yet. Link SIPs to give this goal a dedicated funding source.
+              </Text>
+            </View>
+          )}
+
           <Text
             variant="body-md"
             color={sipShort ? 'text-tertiary' : 'text-secondary'}
             className="mt-stack-md"
           >
             {sipShort
-              ? `Increase SIP by ${inr(sipGap)} a month to close the gap, or accept a smaller corpus at maturity.`
-              : `You're contributing ${inr(Math.abs(sipGap))} more than the plan needs. The buffer compounds into a bigger corpus.`}
+              ? `Top up by ${inr(sipGap)}/mo to close the gap, or accept a smaller corpus at maturity.`
+              : `You're contributing ${inr(Math.abs(sipGap))} more than the plan needs — the buffer compounds into a bigger corpus.`}
           </Text>
         </Card>
 
@@ -232,14 +283,14 @@ export default function GoalDetailScreen() {
           </View>
         </Card>
 
-        {/* Recommended funds */}
+        {/* Sanjay's recommended funds */}
         <Card>
           <View className="flex-row items-center justify-between mb-stack-sm">
             <Text variant="label-caps" color="text-on-surface-variant">
-              Suggested funds for this goal
+              Sanjay's picks for this goal
             </Text>
             <Text variant="label-caps" color="text-on-surface-variant">
-              {goal.recommendedFundIds.length} picks
+              {goal.recommendedFundIds.length} funds
             </Text>
           </View>
           {goal.recommendedFundIds.map((id) => (

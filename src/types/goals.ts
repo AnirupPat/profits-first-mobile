@@ -4,6 +4,11 @@ export type GoalStatus = 'on-track' | 'lagging' | 'ahead';
 
 export type GoalRiskProfile = 'aggressive' | 'balanced' | 'conservative';
 
+export type LinkedFund = {
+  fundId: string;
+  monthlySip: number;
+};
+
 export type Goal = {
   id: string;
   name: string;
@@ -20,4 +25,5 @@ export type Goal = {
   debtPct: number;
   alternativesPct: number;
   recommendedFundIds: string[];
+  linkedFunds: LinkedFund[];
 };

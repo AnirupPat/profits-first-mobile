@@ -8,10 +8,13 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { Chip } from '@/components/ui/Chip';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useOnboarding } from '@/state/OnboardingContext';
 import { useGoals } from '@/state/GoalsContext';
-import type { Goal, GoalCategory, GoalRiskProfile } from '@/types/goals';
+import { MOCK_HOLDINGS } from '@/data/mockHoldings';
+import type { Goal, GoalCategory, GoalRiskProfile, LinkedFund } from '@/types/goals';
 import type { ChildProfile } from '@/types/onboarding';
 import { inr, inrCompact } from '@/utils/format';
 
@@ -44,9 +47,8 @@ const FUNDS_BY_CATEGORY: Record<GoalCategory, string[]> = {
   travel: ['sbi-liquid', 'hdfc-short-term'],
 };
 
-// Annual inflation rates per category
 const INFLATION_BY_CATEGORY: Record<GoalCategory, number> = {
-  education: 0.08,  // education costs rise ~8% p.a. in India
+  education: 0.08,
   home: 0.07,
   retirement: 0.06,
   travel: 0.06,
@@ -55,7 +57,7 @@ const INFLATION_BY_CATEGORY: Record<GoalCategory, number> = {
 const TODAY_COST_LABEL: Record<GoalCategory, string> = {
   education: "Today's education cost",
   home: "Today's property cost",
-  retirement: "Monthly expense today",
+  retirement: 'Monthly expense today',
   travel: "Today's trip cost",
 };
 
@@ -66,6 +68,12 @@ const TODAY_COST_HELPER: Record<GoalCategory, string> = {
   travel: 'e.g. total estimated cost if you travelled today.',
 };
 
+const CATEGORY_COLOR: Record<string, string> = {
+  equity: '#99d4ae',
+  debt: '#bec6e0',
+  alternatives: '#edbaba',
+};
+
 function calcMonthlySip(targetAmount: number, years: number): number {
   if (years <= 0 || targetAmount <= 0) return 0;
   const n = years * 12;
@@ -74,20 +82,20 @@ function calcMonthlySip(targetAmount: number, years: number): number {
   return Math.round(pmt);
 }
 
-function inflationAdjust(todayCost: number, inflationRate: number, years: number): number {
-  return Math.round(todayCost * Math.pow(1 + inflationRate, years));
+function inflationAdjust(todayCost: number, rate: number, years: number): number {
+  return Math.round(todayCost * Math.pow(1 + rate, years));
 }
 
 function categoryTargetYear(category: GoalCategory, child?: ChildProfile): number {
-  if (category === 'education' && child) {
-    return CURRENT_YEAR + Math.max(1, 18 - child.age);
-  }
+  if (category === 'education' && child) return CURRENT_YEAR + Math.max(1, 18 - child.age);
   if (category === 'retirement') return CURRENT_YEAR + 25;
   if (category === 'home') return CURRENT_YEAR + 5;
   return CURRENT_YEAR + 2;
 }
 
-type Step = 'pick-category' | 'fill-details';
+type Step = 'pick-category' | 'fill-details' | 'link-funds';
+
+// ─── Category card ──────────────────────────────────────────────────────────
 
 function CategoryCard({
   item,
@@ -99,7 +107,6 @@ function CategoryCard({
   onSelect: () => void;
 }) {
   return (
-    // flex-1 via className; only opacity goes in the pressed-state style callback
     <Pressable
       onPress={onSelect}
       className="flex-1"
@@ -141,6 +148,8 @@ function CategoryCard({
     </Pressable>
   );
 }
+
+// ─── Child picker ────────────────────────────────────────────────────────────
 
 function ChildPicker({
   children,
@@ -198,25 +207,114 @@ function ChildPicker({
   );
 }
 
+// ─── Fund row for link-funds step ────────────────────────────────────────────
+
+function FundLinkRow({
+  holdingId,
+  linked,
+  sipStr,
+  onToggle,
+  onSipChange,
+}: {
+  holdingId: string;
+  linked: boolean;
+  sipStr: string;
+  onToggle: () => void;
+  onSipChange: (val: string) => void;
+}) {
+  const holding = MOCK_HOLDINGS.find((h) => h.id === holdingId);
+  if (!holding) return null;
+  const dotColor = CATEGORY_COLOR[holding.category] ?? '#bec6e0';
+
+  return (
+    <Pressable
+      onPress={onToggle}
+      style={({ pressed }) => (pressed ? { opacity: 0.7 } : undefined)}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: linked }}
+    >
+      <View
+        className={`rounded-xl border p-4 gap-stack-sm ${
+          linked
+            ? 'bg-secondary-container/10 border-secondary/40'
+            : 'bg-surface-container-low border-outline-variant/20'
+        }`}
+      >
+        {/* Fund header row */}
+        <View className="flex-row items-start gap-3">
+          <View
+            className={`w-5 h-5 rounded border-2 items-center justify-center mt-0.5 flex-shrink-0 ${
+              linked ? 'bg-secondary border-secondary' : 'border-outline-variant'
+            }`}
+          >
+            {linked ? <Icon name="check" size={12} color="#131315" /> : null}
+          </View>
+          <View className="flex-1">
+            <Text
+              variant="body-md"
+              color={linked ? 'text-on-surface' : 'text-on-surface-variant'}
+              className="font-manrope-semibold"
+              numberOfLines={1}
+            >
+              {holding.name}
+            </Text>
+            <View className="flex-row items-center gap-2 mt-0.5">
+              <View className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dotColor }} />
+              <Text variant="label-caps" color="text-on-surface-variant">
+                {holding.subCategory} · {holding.plan}
+              </Text>
+            </View>
+          </View>
+          <Text variant="label-caps" color="text-on-surface-variant" className="mt-0.5">
+            {inrCompact(holding.currentValue)}
+          </Text>
+        </View>
+
+        {/* SIP input — only visible when linked */}
+        {linked && (
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <CurrencyInput
+              label="Monthly SIP for this goal"
+              value={sipStr}
+              onChangeText={onSipChange}
+              helper="How much of your SIP in this fund goes towards this goal?"
+            />
+          </Pressable>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
 export default function NewGoalScreen() {
   const { profile } = useOnboarding();
   const { addGoal } = useGoals();
 
   const profileChildren = profile.family?.children ?? [];
 
+  // Step 1: category
   const [step, setStep] = useState<Step>('pick-category');
   const [category, setCategory] = useState<GoalCategory | null>(null);
+
+  // Step 2: details
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [goalName, setGoalName] = useState('');
   const [todaysCostStr, setTodaysCostStr] = useState('');
   const [targetAmountStr, setTargetAmountStr] = useState('');
   const [targetYearStr, setTargetYearStr] = useState('');
 
+  // Step 3: linked funds — map fundId → monthly SIP string
+  const [linkedSips, setLinkedSips] = useState<Record<string, string>>({});
+
+  // ── Step 1 handlers ──
   const handleCategorySelect = (cat: GoalCategory) => {
     setCategory(cat);
     setTodaysCostStr('');
     if (cat !== 'education') setSelectedChild(null);
-    const defaultChild = cat === 'education' && profileChildren.length > 0 ? profileChildren[0] : undefined;
+    const defaultChild =
+      cat === 'education' && profileChildren.length > 0 ? profileChildren[0] : undefined;
     if (cat === 'education' && defaultChild) setSelectedChild(defaultChild);
     setTargetYearStr(String(categoryTargetYear(cat, defaultChild)));
     setTargetAmountStr('');
@@ -229,16 +327,17 @@ export default function NewGoalScreen() {
     setGoalName(defaultNames[cat]);
   };
 
+  // ── Step 2 handlers ──
   const handleChildChange = (child: ChildProfile | null) => {
     setSelectedChild(child);
     const yr = categoryTargetYear('education', child ?? undefined);
     setTargetYearStr(String(yr));
     setGoalName(child ? `${child.name}'s Education` : "Child's Education");
-    // recalculate inflation-adjusted amount if today's cost is set
     if (todaysCostStr && Number(todaysCostStr) > 0) {
       const years = Math.max(1, yr - CURRENT_YEAR);
-      const inflated = inflationAdjust(Number(todaysCostStr), INFLATION_BY_CATEGORY.education, years);
-      setTargetAmountStr(String(inflated));
+      setTargetAmountStr(
+        String(inflationAdjust(Number(todaysCostStr), INFLATION_BY_CATEGORY.education, years)),
+      );
     }
   };
 
@@ -247,23 +346,41 @@ export default function NewGoalScreen() {
     const cost = Number(val) || 0;
     if (cost > 0 && category) {
       const years = Math.max(1, (Number(targetYearStr) || CURRENT_YEAR + 1) - CURRENT_YEAR);
-      const inflated = inflationAdjust(cost, INFLATION_BY_CATEGORY[category], years);
-      setTargetAmountStr(String(inflated));
+      setTargetAmountStr(
+        String(inflationAdjust(cost, INFLATION_BY_CATEGORY[category], years)),
+      );
     }
   };
 
   const handleTargetYearChange = (val: string) => {
     const cleaned = val.replace(/\D/g, '').slice(0, 4);
     setTargetYearStr(cleaned);
-    // recalc if today's cost is entered
     if (todaysCostStr && Number(todaysCostStr) > 0 && category) {
       const yr = Number(cleaned) || CURRENT_YEAR + 1;
       const years = Math.max(1, yr - CURRENT_YEAR);
-      const inflated = inflationAdjust(Number(todaysCostStr), INFLATION_BY_CATEGORY[category], years);
-      setTargetAmountStr(String(inflated));
+      setTargetAmountStr(
+        String(inflationAdjust(Number(todaysCostStr), INFLATION_BY_CATEGORY[category], years)),
+      );
     }
   };
 
+  // ── Step 3 handlers ──
+  const toggleFund = (fundId: string) => {
+    setLinkedSips((prev) => {
+      if (fundId in prev) {
+        const next = { ...prev };
+        delete next[fundId];
+        return next;
+      }
+      return { ...prev, [fundId]: '' };
+    });
+  };
+
+  const setSip = (fundId: string, val: string) => {
+    setLinkedSips((prev) => ({ ...prev, [fundId]: val }));
+  };
+
+  // ── Derived values ──
   const targetAmount = Number(targetAmountStr) || 0;
   const targetYear = Number(targetYearStr) || CURRENT_YEAR + 1;
   const horizonYears = Math.max(1, targetYear - CURRENT_YEAR);
@@ -275,11 +392,28 @@ export default function NewGoalScreen() {
   const inflationRate = category ? INFLATION_BY_CATEGORY[category] : 0.06;
   const inflationPct = Math.round(inflationRate * 100);
 
+  const linkedFundsArray: LinkedFund[] = Object.entries(linkedSips)
+    .filter(([, sip]) => Number(sip) > 0)
+    .map(([fundId, sip]) => ({ fundId, monthlySip: Number(sip) }));
+
+  const totalLinkedSip = linkedFundsArray.reduce((s, f) => s + f.monthlySip, 0);
+  const sipCoverageRatio = monthlySipNeeded > 0 ? totalLinkedSip / monthlySipNeeded : 0;
+
+  // ── Guards ──
   const canProceed = category !== null;
-  const canSave = goalName.trim().length > 0 && targetAmount > 0 && targetYear > CURRENT_YEAR;
+  const canGoToLink = goalName.trim().length > 0 && targetAmount > 0 && targetYear > CURRENT_YEAR;
+  const canSave = canGoToLink; // funds linking is optional
+
+  const goalStatus = (): Goal['status'] => {
+    if (totalLinkedSip === 0) return 'lagging';
+    if (totalLinkedSip >= monthlySipNeeded) return 'on-track';
+    if (totalLinkedSip >= monthlySipNeeded * 0.85) return 'on-track';
+    return 'lagging';
+  };
 
   const onSave = () => {
     if (!category || !canSave) return;
+    const actualSip = totalLinkedSip > 0 ? totalLinkedSip : 0;
     addGoal({
       id: `goal-${Date.now()}`,
       name: goalName.trim(),
@@ -289,29 +423,57 @@ export default function NewGoalScreen() {
       targetYear,
       horizonYears,
       monthlySipNeeded,
-      monthlySipActual: 0,
-      status: 'on-track',
+      monthlySipActual: actualSip,
+      status: goalStatus(),
       riskProfile,
       equityPct: alloc.equity,
       debtPct: alloc.debt,
       alternativesPct: alloc.alt,
       recommendedFundIds: FUNDS_BY_CATEGORY[category],
+      linkedFunds: linkedFundsArray,
     });
     router.back();
   };
 
+  // ── Step label for TopAppBar ──
+  const stepTitle: Record<Step, string> = {
+    'pick-category': 'New Goal',
+    'fill-details': 'Goal details',
+    'link-funds': 'Link investments',
+  };
+
+  const onBackPress = () => {
+    if (step === 'link-funds') setStep('fill-details');
+    else if (step === 'fill-details') setStep('pick-category');
+    else router.back();
+  };
+
   return (
     <View className="flex-1 bg-background">
-      <TopAppBar
-        title={step === 'pick-category' ? 'New Goal' : 'Goal details'}
-        onBackPress={() => {
-          if (step === 'fill-details') setStep('pick-category');
-          else router.back();
-        }}
-        rightIcon={null}
-      />
+      <TopAppBar title={stepTitle[step]} onBackPress={onBackPress} rightIcon={null} />
+
+      {/* Progress dots */}
+      <View className="flex-row gap-1.5 px-4 pb-3">
+        {(['pick-category', 'fill-details', 'link-funds'] as Step[]).map((s, i) => {
+          const done =
+            (step === 'fill-details' && i === 0) ||
+            (step === 'link-funds' && i <= 1);
+          const active = step === s;
+          return (
+            <View
+              key={s}
+              className={`h-1.5 flex-1 rounded-full ${
+                active ? 'bg-secondary' : done ? 'bg-secondary/50' : 'bg-surface-container-highest'
+              }`}
+            />
+          );
+        })}
+      </View>
+
       <ScreenContainer scroll edges={[]} contentClassName="gap-stack-md pb-stack-lg">
-        {step === 'pick-category' ? (
+
+        {/* ── Step 1: Category picker ─────────────────────────────────── */}
+        {step === 'pick-category' && (
           <>
             <View>
               <Text variant="headline-lg" color="text-on-surface">
@@ -322,7 +484,6 @@ export default function NewGoalScreen() {
               </Text>
             </View>
 
-            {/* 2×2 grid — explicit flex-row with flex-1 children */}
             <View className="gap-stack-sm">
               <View className="flex-row gap-stack-sm">
                 {CATEGORIES.slice(0, 2).map((cat) => (
@@ -354,7 +515,10 @@ export default function NewGoalScreen() {
               trailingIcon="arrow_forward"
             />
           </>
-        ) : (
+        )}
+
+        {/* ── Step 2: Details ─────────────────────────────────────────── */}
+        {step === 'fill-details' && (
           <>
             {/* Education: child picker */}
             {category === 'education' && profileChildren.length > 0 && (
@@ -388,20 +552,22 @@ export default function NewGoalScreen() {
                   autoCapitalize="words"
                 />
 
-                {/* Today's cost → inflation-adjusted corpus */}
                 <CurrencyInput
                   label={category ? TODAY_COST_LABEL[category] : "Today's cost"}
                   value={todaysCostStr}
                   onChangeText={handleTodaysCostChange}
-                  helper={category ? TODAY_COST_HELPER[category] : 'Optional — helps us compute inflation-adjusted target.'}
+                  helper={
+                    category
+                      ? TODAY_COST_HELPER[category]
+                      : 'Optional — helps compute inflation-adjusted target.'
+                  }
                 />
 
-                {/* Inflation callout */}
                 {todaysCost > 0 && targetAmount > 0 && (
                   <View className="bg-surface-container/60 rounded-lg border border-outline-variant/20 p-3 flex-row items-start gap-2">
                     <Icon name="info" size={16} color="#bec6e0" />
                     <Text variant="label-caps" color="text-on-surface-variant" className="flex-1">
-                      {inrCompact(todaysCost)} today grows to{' '}
+                      {inrCompact(todaysCost)} today →{' '}
                       <Text variant="label-caps" color="text-on-surface">
                         {inrCompact(targetAmount)}
                       </Text>{' '}
@@ -413,14 +579,10 @@ export default function NewGoalScreen() {
                 <CurrencyInput
                   label="Target corpus"
                   value={targetAmountStr}
-                  onChangeText={(v) => {
-                    setTargetAmountStr(v);
-                    // manual edit clears the auto-link to today's cost
-                    if (!todaysCostStr) return;
-                  }}
+                  onChangeText={setTargetAmountStr}
                   helper={
                     todaysCost > 0
-                      ? 'Auto-filled from today\'s cost + inflation. You can override.'
+                      ? "Auto-filled from today's cost + inflation. You can override."
                       : 'How much do you want to accumulate?'
                   }
                 />
@@ -437,7 +599,6 @@ export default function NewGoalScreen() {
               </View>
             </Card>
 
-            {/* Monthly SIP estimate */}
             {monthlySipNeeded > 0 && (
               <Card variant="high">
                 <View className="flex-row items-center gap-stack-md">
@@ -446,13 +607,13 @@ export default function NewGoalScreen() {
                   </View>
                   <View className="flex-1">
                     <Text variant="label-caps" color="text-on-surface-variant">
-                      Estimated monthly SIP
+                      Estimated monthly SIP needed
                     </Text>
                     <Text variant="headline-md" color="text-on-surface" className="mt-0.5">
                       {inr(monthlySipNeeded)}
                     </Text>
                     <Text variant="label-caps" color="text-on-surface-variant" className="mt-0.5">
-                      at ~12% returns · {riskProfile} · {horizonYears} yr horizon
+                      at ~12% returns · {riskProfile} · {horizonYears} yr
                     </Text>
                   </View>
                 </View>
@@ -460,12 +621,107 @@ export default function NewGoalScreen() {
             )}
 
             <Button
-              label="Add goal"
-              onPress={onSave}
-              disabled={!canSave}
+              label="Link investments"
+              onPress={() => setStep('link-funds')}
+              disabled={!canGoToLink}
               fullWidth
-              leadingIcon="check"
+              trailingIcon="arrow_forward"
             />
+          </>
+        )}
+
+        {/* ── Step 3: Link funds ──────────────────────────────────────── */}
+        {step === 'link-funds' && (
+          <>
+            <View>
+              <Text variant="headline-lg" color="text-on-surface">
+                Give purpose to your SIPs
+              </Text>
+              <Text variant="body-md" color="text-on-surface-variant" className="mt-2">
+                Select which of your existing mutual funds are working towards{' '}
+                <Text variant="body-md" color="text-on-surface" className="font-manrope-semibold">
+                  {goalName}
+                </Text>
+                . Every rupee should have a job.
+              </Text>
+            </View>
+
+            {/* SIP progress bar */}
+            {monthlySipNeeded > 0 && (
+              <Card variant="high">
+                <View className="flex-row items-baseline justify-between mb-2">
+                  <Text variant="label-caps" color="text-on-surface-variant">
+                    Monthly SIP committed
+                  </Text>
+                  <View className="flex-row items-baseline gap-1">
+                    <Text variant="headline-md" color="text-on-surface">
+                      {inrCompact(totalLinkedSip)}
+                    </Text>
+                    <Text variant="label-caps" color="text-on-surface-variant">
+                      of {inrCompact(monthlySipNeeded)}
+                    </Text>
+                  </View>
+                </View>
+                <ProgressBar
+                  value={Math.min(sipCoverageRatio * 100, 100)}
+                  max={100}
+                  tone={sipCoverageRatio >= 0.85 ? 'secondary' : 'tertiary'}
+                  height="md"
+                />
+                {totalLinkedSip === 0 && (
+                  <Text variant="label-caps" color="text-on-surface-variant" className="mt-2">
+                    Tap a fund below to link it to this goal.
+                  </Text>
+                )}
+                {totalLinkedSip > 0 && totalLinkedSip < monthlySipNeeded && (
+                  <Text variant="label-caps" color="text-on-surface-variant" className="mt-2">
+                    Gap of {inrCompact(monthlySipNeeded - totalLinkedSip)}/mo — link more funds or
+                    increase SIP amounts.
+                  </Text>
+                )}
+                {totalLinkedSip >= monthlySipNeeded && (
+                  <Text variant="label-caps" color="text-secondary" className="mt-2">
+                    SIP fully covered. You're on track.
+                  </Text>
+                )}
+              </Card>
+            )}
+
+            {/* Fund list */}
+            <View className="gap-stack-sm">
+              {MOCK_HOLDINGS.map((h) => (
+                <FundLinkRow
+                  key={h.id}
+                  holdingId={h.id}
+                  linked={h.id in linkedSips}
+                  sipStr={linkedSips[h.id] ?? ''}
+                  onToggle={() => toggleFund(h.id)}
+                  onSipChange={(val) => setSip(h.id, val)}
+                />
+              ))}
+            </View>
+
+            {/* Category legend */}
+            <View className="flex-row gap-stack-md">
+              {Object.entries(CATEGORY_COLOR).map(([cat, color]) => (
+                <View key={cat} className="flex-row items-center gap-1.5">
+                  <View className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                  <Text variant="label-caps" color="text-on-surface-variant" className="capitalize">
+                    {cat}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            <View className="gap-stack-sm">
+              <Button label="Add goal" onPress={onSave} fullWidth leadingIcon="check" />
+              <Button
+                label="Skip — add funds later"
+                variant="ghost"
+                onPress={onSave}
+                fullWidth
+              />
+            </View>
           </>
         )}
       </ScreenContainer>
