@@ -9,6 +9,7 @@ import { Chip, type ChipTone } from '@/components/ui/Chip';
 import { Icon } from '@/components/ui/Icon';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { DonutChart } from '@/components/charts/DonutChart';
+import { GoalPilotEntryCard } from '@/components/goals/GoalPilotEntryCard';
 import { useAuth } from '@/state/AuthContext';
 import { useOnboarding } from '@/state/OnboardingContext';
 import { computeHealth, type HealthBucket } from '@/utils/portfolioHealth';
@@ -232,6 +233,8 @@ export default function HomeScreen() {
             sub="Target: 6 months"
           />
         </View>
+
+        <GoalPilotEntryCard />
 
         <Card variant="outline">
           <Text variant="label-caps" color="text-on-surface-variant" className="mb-stack-sm">
