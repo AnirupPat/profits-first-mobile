@@ -7,7 +7,6 @@ export const SANJAY: Advisor = {
   experienceYrs: 18,
   specialisations: ['Equity', 'Retirement', 'Tax Planning', 'Insurance'],
   bio: "Sanjay helps India's emerging affluent navigate wealth creation with clarity and discipline. He believes every rupee deserves a purpose.",
-  sebiRegNo: 'INA000015563',
 };
 
 // Slots across the next two weeks from 2026-05-17

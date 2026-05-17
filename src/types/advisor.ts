@@ -7,7 +7,6 @@ export type Advisor = {
   experienceYrs: number;
   specialisations: string[];
   bio: string;
-  sebiRegNo: string;
 };
 
 export type AdvisorySlot = {

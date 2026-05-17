@@ -135,10 +135,7 @@ export default function AdvisoryScreen() {
                 {SANJAY.name}
               </Text>
               <Text variant="body-md" color="text-on-surface-variant" className="mt-0.5">
-                {SANJAY.experienceYrs} yrs · SEBI RIA
-              </Text>
-              <Text variant="label-caps" color="text-on-surface-variant">
-                Reg: {SANJAY.sebiRegNo}
+                {SANJAY.experienceYrs} yrs · MBA in Finance, CFA
               </Text>
             </View>
             <View className="flex-row gap-1.5">

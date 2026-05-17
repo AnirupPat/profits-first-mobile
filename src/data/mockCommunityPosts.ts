@@ -28,7 +28,7 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
     id: 'p1',
     authorType: 'advisor',
     authorName: 'Sanjay Kathuria',
-    authorRole: 'SEBI-registered Advisor',
+    authorRole: 'MBA in Finance, CFA',
     initials: 'SK',
     timestamp: '2h ago',
     headline: 'Tech sector rotation gathers pace — should you rebalance?',

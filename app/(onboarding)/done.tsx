@@ -42,7 +42,7 @@ export default function DoneScreen() {
               Sanjay Kathuria
             </Text>
             <Text variant="body-md" color="text-on-surface-variant">
-              18 yrs · SEBI-registered
+              18 yrs · MBA in Finance, CFA
             </Text>
           </View>
         </View>

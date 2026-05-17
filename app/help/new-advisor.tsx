@@ -148,7 +148,7 @@ export default function NewAdvisorTicketScreen() {
                 {SANJAY.name} & team
               </Text>
               <Text variant="label-caps" color="text-on-surface-variant">
-                SEBI RIA · Callback within 1 business day
+                MBA in Finance, CFA · Callback within 1 business day
               </Text>
             </View>
           </View>

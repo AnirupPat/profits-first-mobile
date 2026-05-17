@@ -232,7 +232,7 @@ export default function ScheduleScreen() {
                 {SANJAY.name}
               </Text>
               <Text variant="label-caps" color="text-on-surface-variant">
-                {SANJAY.experienceYrs} yrs · SEBI RIA · Video / phone call
+                {SANJAY.experienceYrs} yrs · MBA in Finance, CFA · Video / phone call
               </Text>
             </View>
             <Icon name="call" size={20} color="#99d4ae" />
