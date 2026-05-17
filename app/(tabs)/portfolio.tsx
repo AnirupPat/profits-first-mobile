@@ -193,6 +193,19 @@ export default function PortfolioScreen() {
           </View>
         </View>
 
+        {/* Compare CTA */}
+        <Pressable
+          onPress={() => router.push('/compare')}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          accessibilityRole="button"
+          className="self-start flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high border border-outline-variant/30"
+        >
+          <Icon name="swap-horizontal" size={14} color="#99d4ae" />
+          <Text variant="label-caps" color="text-on-surface-variant">
+            Compare funds
+          </Text>
+        </Pressable>
+
         {/* Holdings list */}
         {MOCK_HOLDINGS.map((h) => (
           <HoldingCard

@@ -5,8 +5,10 @@ import { TopAppBar } from '@/components/layout/TopAppBar';
 import { Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
+import { Button } from '@/components/ui/Button';
 import { MOCK_HOLDINGS } from '@/data/mockHoldings';
 import { FUND_DETAILS, type RiskLevel } from '@/data/mockFunds';
+import { defaultBenchmarkFor } from '@/data/categoryBenchmarks';
 import { inr, inrCompact } from '@/utils/format';
 
 const RISK_SEGMENTS: Array<{ label: string; color: string }> = [
@@ -103,6 +105,19 @@ export default function FundDetailScreen() {
             />
           </View>
         </Card>
+
+        {/* Compare CTA */}
+        <Button
+          label="Compare this fund"
+          variant="outline"
+          leadingIcon="swap-horizontal"
+          fullWidth
+          onPress={() =>
+            router.push(
+              `/compare?leftKind=fund&leftId=${fund.id}&rightKind=index&rightId=${defaultBenchmarkFor(fund.category)}`,
+            )
+          }
+        />
 
         {/* Your position */}
         <Card>

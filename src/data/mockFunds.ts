@@ -29,6 +29,11 @@ export type FundDetail = {
   returns1Y: number;
   returns3Y: number;
   returns5Y: number;
+  rollingReturns: { '3Y': number; '5Y': number; '10Y': number };
+  stdDevPct: number;
+  maxDrawdownPct: number;
+  betaVsDefaultBenchmark: number;
+  jensensAlphaPct: number;
   topHoldings: TopHolding[];
 };
 
@@ -50,6 +55,11 @@ export const FUND_DETAILS: Record<string, FundDetail> = {
     returns1Y: 18.54,
     returns3Y: 22.1,
     returns5Y: 15.42,
+    rollingReturns: { '3Y': 19.8, '5Y': 14.7, '10Y': 12.5 },
+    stdDevPct: 14.8,
+    maxDrawdownPct: -24.6,
+    betaVsDefaultBenchmark: 0.94,
+    jensensAlphaPct: 1.4,
     topHoldings: [
       { name: 'HDFC Bank Ltd.', sector: 'Financial Services', pct: 9.45 },
       { name: 'ICICI Bank Ltd.', sector: 'Financial Services', pct: 8.12 },
@@ -75,6 +85,11 @@ export const FUND_DETAILS: Record<string, FundDetail> = {
     returns1Y: 16.21,
     returns3Y: 19.85,
     returns5Y: 14.9,
+    rollingReturns: { '3Y': 17.2, '5Y': 13.8, '10Y': 11.6 },
+    stdDevPct: 15.2,
+    maxDrawdownPct: -26.3,
+    betaVsDefaultBenchmark: 0.96,
+    jensensAlphaPct: -0.6,
     topHoldings: [
       { name: 'ICICI Bank Ltd.', sector: 'Financial Services', pct: 10.2 },
       { name: 'HDFC Bank Ltd.', sector: 'Financial Services', pct: 9.3 },
@@ -100,6 +115,11 @@ export const FUND_DETAILS: Record<string, FundDetail> = {
     returns1Y: 24.1,
     returns3Y: 28.3,
     returns5Y: 20.15,
+    rollingReturns: { '3Y': 25.4, '5Y': 19.2, '10Y': 17.8 },
+    stdDevPct: 16.5,
+    maxDrawdownPct: -20.1,
+    betaVsDefaultBenchmark: 0.86,
+    jensensAlphaPct: 4.8,
     topHoldings: [
       { name: 'HDFC Bank Ltd.', sector: 'Financial Services', pct: 7.2 },
       { name: 'Alphabet Inc.', sector: 'Technology (US)', pct: 6.8 },
@@ -125,6 +145,11 @@ export const FUND_DETAILS: Record<string, FundDetail> = {
     returns1Y: 7.82,
     returns3Y: 6.45,
     returns5Y: 7.1,
+    rollingReturns: { '3Y': 6.9, '5Y': 7.2, '10Y': 7.4 },
+    stdDevPct: 1.9,
+    maxDrawdownPct: -2.4,
+    betaVsDefaultBenchmark: 0.92,
+    jensensAlphaPct: 0.3,
     topHoldings: [
       { name: 'GOI 8.38% 2027', sector: 'Govt Securities', pct: 12.4 },
       { name: 'NABARD 7.52%', sector: 'PSU Bonds', pct: 9.8 },
@@ -150,6 +175,11 @@ export const FUND_DETAILS: Record<string, FundDetail> = {
     returns1Y: 6.85,
     returns3Y: 5.9,
     returns5Y: 5.75,
+    rollingReturns: { '3Y': 6.1, '5Y': 5.9, '10Y': 6.2 },
+    stdDevPct: 0.4,
+    maxDrawdownPct: -0.3,
+    betaVsDefaultBenchmark: 0.98,
+    jensensAlphaPct: 0.1,
     topHoldings: [
       { name: 'GOI T-Bills', sector: 'Govt Securities', pct: 24.1 },
       { name: 'Certificate of Deposits', sector: 'Banking', pct: 18.4 },
@@ -175,6 +205,11 @@ export const FUND_DETAILS: Record<string, FundDetail> = {
     returns1Y: 18.2,
     returns3Y: 14.6,
     returns5Y: 12.8,
+    rollingReturns: { '3Y': 14.2, '5Y': 12.5, '10Y': 10.8 },
+    stdDevPct: 13.6,
+    maxDrawdownPct: -12.4,
+    betaVsDefaultBenchmark: 0.99,
+    jensensAlphaPct: 0.05,
     topHoldings: [
       { name: 'Gold (Physical)', sector: 'Commodity', pct: 99.8 },
     ],
